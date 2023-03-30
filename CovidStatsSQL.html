@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My SQL Queries</title>
+</head>
+<body>
+  <h1>My SQL Queries</h1>
+
+  <pre>
+
+
+select * from CovidDeaths;
+
+select * from covidvaccinations;
+
+update coviddeaths set continent = NULL where continent = '';
+update covidvaccinations set continent = NULL where continent = '';
+
+-- Data we are using
+Select location, date, total_cases, total_deaths, population
+from coviddeaths
+order by location, date;
+
+-- Total Cases V Population
+-- ie Canada population stats
+Select location, date, total_cases, population, (total_cases/population)*100 as PopulationPercentage
+from coviddeaths
+-- where location = 'Canada'
+order by location, date;
+
+-- Total Deaths V population
+Select location, date, total_cases, total_deaths, (total_deaths/population)*100 as PopulationDeathsPercentage
+from coviddeaths
+where location = 'Canada'
+order by location, date;
+
+-- Countries : Highest infection by Population
+Select location, population, date, max(total_cases) as HighestInfection, max((total_cases/population)) *100 as PopPercentageInfected
+from coviddeaths
+Group by location, population, date
+order by poppercentageInfected Desc;
+
+-- Countries : Highest Deaths counts by Population
+Select location, max(total_deaths) as TotalDeaths
+from coviddeaths
+where continent is not null
+Group by location
+order by TotalDeaths Desc;
+
+-- Continent Deaths Counts
+Select location, max(total_deaths) as TotalDeaths
+from coviddeaths
+where continent is null
+and location not in ('World','European Union','International')
+group by location
+order by totaldeaths desc;
+
+-- Global numbers
+Select sum(new_cases) as global_total_cases, sum(new_deaths) as global_total_deaths, sum(new_deaths)/sum(new_cases)*100 as GlobalDeathsPercentage
+from coviddeaths
+where continent is not null
+order by 1,2;
+
+
+-- Total pop V vaccinations
+select d.continent, d.location, d.date, d.population, v.new_vaccinations,
+sum(v.new_vaccinations) over(partition by d.location order by d.location, d.date) as RollingPeopleVaccinated
+from coviddeaths d
+join covidvaccinations v
+on d.location = v.location and d.date = v.date
+where d.continent is not null
+order by 2,3;
+
+-- use cte
+with POPvsVac ( continent, location, date, population, new_vaccinations, RollingPeopleVaccinated)
+
+as
+
+(select d.continent, d.location, d.date, d.population, v.new_vaccinations,
+sum(v.new_vaccinations) over(partition by d.location order by d.location, d.date) as RollingPeopleVaccinated
+from coviddeaths d
+join covidvaccinations v
+on d.location = v.location and d.date = v.date
+where d.continent is not null
+)
+
+select *, (RollingPeopleVaccinated /population) * 100
+from POPvsVAC
+order by 2,3;
+
+-- temp table
+create table PercentPopVaccinated
+
+(Continent nvarchar(255),
+Location nvarchar(255),
+Date Datetime,
+Population text,
+New_vaccinations text,
+RollingPeopleVaccinated numeric);
+
+insert into PercentPopVaccinated
+
+select d.continent, d.location, d.date, d.population, v.new_vaccinations,
+sum(v.new_vaccinations) over(partition by d.location order by d.location, d.date) as RollingPeopleVaccinated
+from coviddeaths d
+join covidvaccinations v
+on d.location = v.location and d.date = v.date
+where d.continent is not null;
+
+select *, (RollingPeopleVaccinated /population) * 100
+from PercentPopVaccinated;
+
+-- Create view
+Create view PercentPopVacc as
+select d.continent, d.location, d.date, d.population, v.new_vaccinations,
+sum(v.new_vaccinations) over(partition by d.location order by d.location, d.date) as RollingPeopleVaccinated
+from coviddeaths d
+join covidvaccinations v
+on d.location = v.location and d.date = v.date
+where d.continent is not null;
+
+
+
+
+
+
+
+  </pre>
+</body>
+</html>

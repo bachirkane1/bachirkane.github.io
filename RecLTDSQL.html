@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My SQL Queries</title>
+</head>
+<body>
+  <h1>My SQL Queries</h1>
+
+  <pre>
+
+    create database portfolio_1;
+
+    use portfolio_1;
+
+-- checking data
+
+SELECT * FROM sales_data;
+
+-- checking duplicate
+
+SELECT DISTINCT status FROM sales_data;
+
+SELECT DISTINCT year_id FROM sales_data;
+
+SELECT DISTINCT country FROM sales_data;
+
+SELECT DISTINCT dealsize FROM sales_data;
+
+SELECT DISTINCT territory FROM sales_data;
+
+-- ProductLine sales
+
+SELECT productline, ROUND(SUM(sales), 2) salesByProductLine FROM sales_data
+GROUP BY productline;
+
+-- sales by year
+
+SELECT year_id, ROUND(SUM(sales), 2) YearlySales
+FROM sales_data
+GROUP BY year_id;
+
+-- month in year operations SELECT DISTINCT month_id
+FROM sales_data
+WHERE year_id = 2003
+ORDER BY month_id;-- 12
+
+SELECT DISTINCT month_id
+FROM sales_data
+WHERE year_id = 2004
+ORDER BY month_id;-- 12
+
+SELECT DISTINCT month_id
+FROM sales_data
+WHERE year_id = 2005
+ORDER BY month_id;-- 5
+
+SELECT dealsize, ROUND(SUM(sales), 2) DealSizeSales
+FROM sales_data
+GROUP BY dealsize
+ORDER BY ROUND(SUM(sales), 2) DESC;
+
+-- best month for sales in each year W/ number of Order
+
+SELECT
+    month_id,
+    ROUND(SUM(sales), 2) AS 2005MonthlySales,
+    COUNT(ordernumber) AS 2005MonthlyOrder
+FROM sales_data
+WHERE year_id = 2005
+GROUP BY month_id
+ORDER BY ROUND(SUM(sales), 2) DESC;
+
+-- products sold in best month
+SELECT
+    productline,
+    ROUND(SUM(sales), 2) AS 200311SalesPerYearPL,
+    SUM(quantityordered) AS 200311QPerYearPL,
+    COUNT(ordernumber) AS 200311NumOrderPerYearPL
+FROM sales_data
+WHERE month_id = 11 AND year_id = 2003
+GROUP BY productline;
+
+-- best selling product
+SELECT
+    productLine,
+    ROUND(SUM(sales), 2) AS TotalSalesPP,
+    ROUND(AVG(sales), 2) AS avgSalesPP
+FROM sales_data
+GROUP BY productline;
+
+-- best ordered product
+
+SELECT ProductLine, SUM(QuantityOrdered) AS TotalQOrdered
+FROM Sales_data
+GROUP BY productLine;
+
+-- best country by Sales
+SELECT
+    Country,
+    ROUND(SUM(sales), 2) AS TotalSalesCountry,
+    ROUND(AVG(sales), 2) AS avgSalesCountry
+FROM sales_data
+GROUP BY country;
+
+-- best city by sales
+
+SELECT
+    city,
+    ROUND(SUM(sales), 2) AS TotalSalescity,
+    ROUND(AVG(sales), 2) AS avgSalescity
+FROM sales_data
+GROUP BY city;
+
+SELECT
+    city,
+    ROUND(SUM(sales), 2) AS TotalSalescity,
+    ROUND(AVG(sales), 2) AS avgSalescity
+FROM sales_data
+WHERE year_id = 2003
+GROUP BY city;
+
+
+
+-- Fix date
+SELECT REPLACE(orderdate, '0:00', '')
+FROM sales_data;
+
+UPDATE sales_data
+SET orderdate = REPLACE(orderdate, '0:00', '')
+WHERE orderdate LIKE ('%0:00%');
+
+UPDATE sales_data
+SET orderdate = REPLACE(orderdate, ' ', '')
+WHERE rderdate LIKE (' ');
+
+alter table sales_data
+modify orderdate date;
+
+-- convert text M/DD/YYYY to YYYY-MM-DD date in sql
+UPDATE sales_data
+SET orderdate = STR_TO_DATE(orderdate, '%m/%d/%Y');
+
+ -- best customer by RFM ( Recency-Frequency-Monetary)
+SELECT
+    customername,
+    ROUND(SUM(sales), 2) AS TotalSales,
+    ROUND(AVG(sales), 2) AvgSales,
+    ROUND(COUNT(ordernumber), 2) NumOfOrders,
+    MAX(orderdate) AS lastOrderDate,
+    (SELECT
+            MAX(orderdate)
+        FROM
+            sales_data) AS MaxOrderdate,
+    (- 1 * (DATEDIFF(MAX(orderdate),
+            (SELECT
+                    MAX(orderdate)
+                FROM
+                    sales_data)))) AS date_difference
+FROM
+    sales_data GROUP BY customername;
+
+
+    -----------------------------
+
+SELECT city, SUM(sales)
+FROM sales_data
+WHERE country = 'UK'
+GROUP BY city;
+
+
+
+-- What is the best product in United States?
+
+SELECT country, YEAR_ID, PRODUCTLINE, SUM(sales) AS Revenue
+FROM sales_data
+WHERE country = 'USA'
+GROUP BY country , YEAR_ID , PRODUCTLINE
+ORDER BY 4 DESC;
+
+
+
+
+
+  </pre>
+</body>
+</html>
