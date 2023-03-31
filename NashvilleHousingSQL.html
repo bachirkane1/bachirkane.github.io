@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My SQL Queries</title>
+</head>
+<body>
+  <h1>My SQL Queries</h1>
+
+  <pre>
+
+  create database Nashville_Housing;
+
+  use Nashville_Housing;
+
+  select * from Nashville_Houses;
+
+  -- Date Format
+  UPDATE Nashville_Houses SET SaleDate = STR_TO_DATE(SaleDate, '%d-%b-%y');
+
+  -- Proprety Address Data
+  select * from Nashville_Houses
+  order by parcelid;
+
+
+
+  SELECT a.parcelid, a.propertyaddress, b.propertyaddress, IFNULL(a.propertyaddress, b.propertyaddress) AS merged_address
+  FROM Nashville_Houses a
+  JOIN Nashville_Houses b ON a.parcelid = b.parcelid AND a.uniqueid <> b.uniqueid
+  WHERE a.propertyaddress IS NULL;
+
+  UPDATE Nashville_Houses a
+  JOIN Nashville_Houses b ON a.parcelid = b.parcelid AND a.uniqueid <> b.uniqueid
+  SET a.propertyaddress = COALESCE(a.propertyaddress, b.propertyaddress)
+  WHERE a.propertyaddress IS NULL;
+
+  -- Address into individual Colums ( Address, City, State )
+  SELECT SUBSTR(propertyaddress, 1, LOCATE(',', propertyaddress) - 1) AS Address1,
+  SUBSTR(propertyaddress, LOCATE(',', propertyaddress) + 1) AS Address2
+  FROM Nashville_Houses;
+
+  Alter Table Nashville_Houses
+  add PropertSplityAddress varchar(255);
+
+  update nashville_houses
+  set PropertSplityAddress = SUBSTR(propertyaddress, 1, LOCATE(',', propertyaddress) - 1);
+
+  Alter Table Nashville_Houses
+  add PropertSplityCity varchar(255);
+
+  update nashville_houses
+  set PropertSplityCity = SUBSTR(propertyaddress, LOCATE(',', propertyaddress) + 1);
+
+  select * from Nashville_Houses;
+
+  -- OwnerAddress
+  select OwnerAddress from Nashville_Houses;
+
+  SELECT SUBSTRING_INDEX(owneraddress, ' ', 1) FROM nashville_houses;
+
+  SELECT
+      SUBSTRING_INDEX(REPLACE(owneraddress, ',', ', '), ', ', 1),
+      SUBSTRING_INDEX(SUBSTRING_INDEX(REPLACE(owneraddress, ',', ', '), ', ', 2), ', ', -1),
+      SUBSTRING_INDEX(owneraddress, ', ', -1)
+  FROM nashville_houses;
+
+  Alter Table Nashville_Houses
+  add OwnerSplityAddress varchar(255);
+
+  update nashville_houses
+  set OwnerSplityAddress = SUBSTRING_INDEX(REPLACE(owneraddress, ',', ', '), ', ', 1);
+
+  Alter Table Nashville_Houses
+  add OwnerSplityCity varchar(255);
+
+  update nashville_houses
+  set OwnerSplityCity = SUBSTRING_INDEX(SUBSTRING_INDEX(REPLACE(owneraddress, ',', ', '), ', ', 2), ', ', -1);
+
+  Alter Table Nashville_Houses
+  add OwnerSplityState varchar(255);
+
+  update nashville_houses
+  set OwnerSplityState = SUBSTRING_INDEX(owneraddress, ', ', -1);
+
+  -- Y and N to Yes and No in "Sold as Vacant"
+
+  select soldasvacant, count(soldasvacant)
+  from Nashville_Houses
+  group by 1
+  order by 2;
+
+  select soldasvacant,
+  Case
+  when soldasvacant = 'Y' Then "Yes"
+  when soldasvacant = 'N' then "No"
+  else soldasvacant
+  End
+  from Nashville_Houses;
+
+  update nashville_houses
+  set soldasvacant = Case
+  when soldasvacant = 'Y' Then "Yes"
+  when soldasvacant = 'N' then "No"
+  else soldasvacant
+  End;
+
+  -- Delete Duplicate
+
+  WITH RowNumCte AS (
+    SELECT *,
+      ROW_NUMBER() OVER (
+        PARTITION BY parcelid,
+        propertyaddress,
+        saleprice,
+        saledate,
+        legalreference
+        ORDER BY uniqueid
+      ) AS row_num
+    FROM Nashville_Houses
+    ORDER BY parcelid
+  )
+  Delete FROM RowNumCte
+  WHERE row_num > 1;
+
+  -- Delete Unused Columns
+
+  ALTER TABLE Nashville_houses
+  DROP COLUMN OwnerAddress,
+  DROP COLUMN TaxDistrict,
+  DROP COLUMN propertyaddress;
+
+  Select * from Nashville_Houses;
+
+
+
+
+
+  </pre>
+</body>
+</html>
